@@ -7,9 +7,9 @@ import (
 	"sort"
 	"text/template"
 
-	"telegramsurveylog/pkg/config"
-	"telegramsurveylog/pkg/ports/botport"
-	"telegramsurveylog/pkg/state"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/config"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/ports/botport"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/state"
 )
 
 const (

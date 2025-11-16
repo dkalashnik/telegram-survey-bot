@@ -2,9 +2,9 @@ package questions
 
 import (
 	"fmt"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/config"
 	"strings"
 	"sync"
-	"telegramsurveylog/pkg/config"
 )
 
 var (

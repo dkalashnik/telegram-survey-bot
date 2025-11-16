@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"telegramsurveylog/pkg/bot"
-	"telegramsurveylog/pkg/ports/botport"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/bot"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/ports/botport"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )

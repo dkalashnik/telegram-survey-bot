@@ -1,7 +1,7 @@
 package fsm
 
 import (
-	"telegramsurveylog/pkg/state"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/state"
 
 	"github.com/looplab/fsm"
 )

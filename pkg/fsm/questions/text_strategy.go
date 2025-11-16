@@ -2,8 +2,8 @@ package questions
 
 import (
 	"fmt"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/config"
 	"strings"
-	"telegramsurveylog/pkg/config"
 )
 
 type textStrategy struct{}

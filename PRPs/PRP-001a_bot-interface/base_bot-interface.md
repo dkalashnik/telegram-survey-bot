@@ -178,7 +178,7 @@ Task 1: CREATE pkg/ports/botport/botport.go
   - ADD: Package-level comments explaining purpose + link to AI doc for future contributors.
 
 Task 2: UPDATE pkg/fsm/questions/strategy.go
-  - IMPORT: `telegramsurveylog/pkg/ports/botport` and alias `type BotPort = botport.BotPort` to minimize downstream diffs.
+  - IMPORT: `github.com/dkalashnik/telegram-survey-bot/pkg/ports/botport` and alias `type BotPort = botport.BotPort` to minimize downstream diffs.
   - ADD: `LastPrompt botport.BotMessage` (RenderContext) and `Message botport.BotMessage` (AnswerContext) placeholders with comments noting future FSM wiring.
   - REMOVE: Local BotPort interface + `var _ BotPort = (*bot.Client)(nil)` assertion.
 
@@ -196,7 +196,7 @@ Task 4: UPDATE documentation
 
 ```go
 // Type alias keeps existing code referencing ctx.Bot unchanged
-import "telegramsurveylog/pkg/ports/botport"
+import "github.com/dkalashnik/telegram-survey-bot/pkg/ports/botport"
 
 type BotPort = botport.BotPort
 

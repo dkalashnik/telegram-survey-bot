@@ -6,9 +6,9 @@ import (
 	"testing"
 	"text/template"
 
-	"telegramsurveylog/pkg/bot/fakeadapter"
-	"telegramsurveylog/pkg/config"
-	"telegramsurveylog/pkg/state"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/bot/fakeadapter"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/config"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/state"
 )
 
 func TestBuildForwardPayloadUsesNoAnswer(t *testing.T) {

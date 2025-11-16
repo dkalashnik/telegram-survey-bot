@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
-	"telegramsurveylog/pkg/bot/fakeadapter"
-	"telegramsurveylog/pkg/config"
-	"telegramsurveylog/pkg/fsm/questions"
-	"telegramsurveylog/pkg/state"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/bot/fakeadapter"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/config"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/fsm/questions"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/state"
 )
 
 func TestAskCurrentQuestionStoresBotMessage(t *testing.T) {

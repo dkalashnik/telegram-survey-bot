@@ -3,12 +3,12 @@ package fsm
 import (
 	"context"
 	"fmt"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/config"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/fsm/questions"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/ports/botport"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/state"
 	"log"
 	"strings"
-	"telegramsurveylog/pkg/config"
-	"telegramsurveylog/pkg/fsm/questions"
-	"telegramsurveylog/pkg/ports/botport"
-	"telegramsurveylog/pkg/state"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )

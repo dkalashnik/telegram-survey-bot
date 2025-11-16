@@ -1,7 +1,7 @@
 package questions
 
 import (
-	"telegramsurveylog/pkg/config"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/config"
 	"testing"
 )
 

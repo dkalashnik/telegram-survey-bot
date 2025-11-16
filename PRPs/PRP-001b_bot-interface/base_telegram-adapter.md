@@ -183,7 +183,7 @@ Task 2: TEST pkg/bot/telegramadapter/adapter_test.go
   - USE: Table-driven tests mirroring style from pkg/fsm/questions/*_test.go.
 
 Task 3: UPDATE main.go
-  - IMPORT: `telegramsurveylog/pkg/bot/telegramadapter`.
+  - IMPORT: `github.com/dkalashnik/telegram-survey-bot/pkg/bot/telegramadapter`.
   - INSTANTIATE: Adapter via `telegramadapter.New(botClient, log.Default())` (or wrap `log.Printf`), store for future FSM wiring (e.g., `adapter := telegramadapter.New(...); _ = adapter` placeholder with TODO referencing PRP-001c).
   - COMMENT: Link to PRP follow-up about populating `LastPrompt`/`Message`.
   - DO NOT: Change FSM signatures yet; ensure linter doesn't complain about unused adapter (use `_ = adapter` or pass to future hooking struct).

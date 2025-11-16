@@ -2,9 +2,9 @@ package questions
 
 import (
 	"fmt"
-	"telegramsurveylog/pkg/config"
-	"telegramsurveylog/pkg/ports/botport"
-	"telegramsurveylog/pkg/state"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/config"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/ports/botport"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/state"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )

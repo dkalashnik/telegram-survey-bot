@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"telegramsurveylog/pkg/ports/botport"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/ports/botport"
 )
 
 func TestSendMessageRecordsCall(t *testing.T) {

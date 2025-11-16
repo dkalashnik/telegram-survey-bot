@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"telegramsurveylog/pkg/ports/botport"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/ports/botport"
 )
 
 // FakeAdapter implements botport.BotPort for headless tests.

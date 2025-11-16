@@ -2,16 +2,16 @@ package main
 
 import (
 	"context"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/bot"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/bot/telegramadapter"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/config"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/fsm"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/fsm/questions"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/state"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
-	"telegramsurveylog/pkg/bot"
-	"telegramsurveylog/pkg/bot/telegramadapter"
-	"telegramsurveylog/pkg/config"
-	"telegramsurveylog/pkg/fsm"
-	"telegramsurveylog/pkg/fsm/questions"
-	"telegramsurveylog/pkg/state"
 )
 
 func main() {
