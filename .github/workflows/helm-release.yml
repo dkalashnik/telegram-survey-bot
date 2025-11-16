@@ -81,6 +81,6 @@ jobs:
           sed -i "s/^version:.*/version: ${APP_VERSION}/" helm/telegram-survey-bot/Chart.yaml
           sed -i "s/^appVersion:.*/appVersion: \"${APP_VERSION}\"/" helm/telegram-survey-bot/Chart.yaml
           cr package helm/telegram-survey-bot
-          cr upload --owner $CR_OWNER --git-repo $CR_GIT_REPO --token $CR_TOKEN --package-path $CR_PACKAGE_PATH --release-name-template "chart-{{ .Version }}"
+          cr upload --owner $CR_OWNER --git-repo $CR_GIT_REPO --token $CR_TOKEN --package-path $CR_PACKAGE_PATH
           mkdir -p $CR_INDEX_PATH
           cr index --owner $CR_OWNER --git-repo $CR_GIT_REPO --token $CR_TOKEN --package-path $CR_PACKAGE_PATH --index-path $CR_INDEX_PATH/index.yaml --pages-branch $CR_PAGES_BRANCH --push
