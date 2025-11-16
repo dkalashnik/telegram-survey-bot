@@ -13,7 +13,7 @@ flowchart LR
     FSM -->|reads prompts| Config[pkg/config.RecordConfig]
     FSM -->|stores| Msg[LastPrompt/Message]
     Store --> BotPort
-    BotPort --> Fake[pkg/bot/fakeadapter (tests)]
+    BotPort --> Fake["pkg/bot/fakeadapter (tests)"]
 ```
 
 ## Key Features
