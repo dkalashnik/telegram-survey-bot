@@ -53,23 +53,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Ensure gh-pages branch exists
-        env:
-          CR_BRANCH: gh-pages
-        run: |
-          BASE_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-          if git ls-remote --exit-code origin "refs/heads/${CR_BRANCH}" >/dev/null 2>&1; then
-            echo "${CR_BRANCH} exists"
-          else
-            git checkout --orphan "${CR_BRANCH}"
-            find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
-            touch .nojekyll
-            git add .nojekyll
-            git commit -m "Initialize ${CR_BRANCH}"
-            git push origin "${CR_BRANCH}"
-          fi
-          git checkout "${BASE_BRANCH}"
-
       - name: Set up Helm
         uses: azure/setup-helm@v4
         with:
