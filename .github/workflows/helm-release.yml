@@ -1,0 +1,103 @@
+name: Release (image + chart)
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+  packages: write
+  pages: write
+  id-token: write
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ env.DOCKERHUB_TOKEN }}
+
+      - name: Set version env
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            dkalashnik/telegram-survey-bot:latest
+            dkalashnik/telegram-survey-bot:${{ github.sha }}
+            dkalashnik/telegram-survey-bot:${{ env.VERSION }}
+
+  chart:
+    runs-on: ubuntu-latest
+    needs: image
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure gh-pages branch exists
+        env:
+          CR_BRANCH: gh-pages
+        run: |
+          BASE_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          if git ls-remote --exit-code origin "refs/heads/${CR_BRANCH}" >/dev/null 2>&1; then
+            echo "${CR_BRANCH} exists"
+          else
+            git checkout --orphan "${CR_BRANCH}"
+            find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
+            touch .nojekyll
+            git add .nojekyll
+            git commit -m "Initialize ${CR_BRANCH}"
+            git push origin "${CR_BRANCH}"
+          fi
+          git checkout "${BASE_BRANCH}"
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.4
+
+      - name: Configure git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Install chart-releaser
+        run: |
+          curl -sSL https://github.com/helm/chart-releaser/releases/download/v1.6.0/chart-releaser_1.6.0_linux_amd64.tar.gz \
+            | tar -xz -C /usr/local/bin cr
+
+      - name: Package and release chart
+        env:
+          CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CR_OWNER: ${{ github.repository_owner }}
+          CR_GIT_REPO: ${{ github.event.repository.name }}
+          CR_PACKAGE_PATH: .cr-release-packages
+          CR_INDEX_PATH: .cr-index
+          CR_PAGES_BRANCH: gh-pages
+        run: |
+          APP_VERSION="${GITHUB_REF_NAME#v}"
+          sed -i "s/^version:.*/version: ${APP_VERSION}/" helm/telegram-survey-bot/Chart.yaml
+          sed -i "s/^appVersion:.*/appVersion: \"${APP_VERSION}\"/" helm/telegram-survey-bot/Chart.yaml
+          cr package helm/telegram-survey-bot
+          cr upload --owner $CR_OWNER --git-repo $CR_GIT_REPO --token $CR_TOKEN --package-path $CR_PACKAGE_PATH --release-name-template "chart-{{ .Version }}"
+          mkdir -p $CR_INDEX_PATH
+          cr index --owner $CR_OWNER --git-repo $CR_GIT_REPO --token $CR_TOKEN --branch $CR_PAGES_BRANCH --package-path $CR_PACKAGE_PATH --index-path $CR_INDEX_PATH/index.yaml --push
