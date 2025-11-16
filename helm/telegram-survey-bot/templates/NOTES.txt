@@ -1,0 +1,13 @@
+To deploy:
+
+  helm upgrade --install {{ .Release.Name }} {{ .Chart.Name }} \
+    --set env.telegramBotToken=YOUR_TOKEN \
+    --set env.targetUserId=YOUR_TARGET_USER_ID
+
+Values:
+- image.repository: {{ .Values.image.repository }}
+- image.tag: {{ default .Chart.AppVersion .Values.image.tag }}
+
+Record config is sourced from values.yaml (env.recordConfig) if set, otherwise the packaged record_config.yaml is used.
+To use an existing secret instead of creating one, set env.secretRef to a secret containing keys TELEGRAM_BOT_TOKEN and TARGET_USER_ID.
+env.recordConfig must be provided; the chart no longer packages a default record_config.yaml.

@@ -1,0 +1,52 @@
+name: Helm Chart Releaser
+
+on:
+  push:
+    tags:
+      - "chart-*"
+
+permissions:
+  contents: write
+  packages: write
+  pages: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.4
+
+      - name: Configure git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Install chart-releaser
+        uses: helm/chart-releaser-action@v1.6.0
+        env:
+          CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          version: v1.6.0
+
+      - name: Run chart-releaser
+        env:
+          CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CR_OWNER: ${{ github.repository_owner }}
+          CR_GIT_REPO: ${{ github.event.repository.name }}
+          CR_PACKAGE_PATH: .cr-release-packages
+          CR_INDEX_PATH: .cr-index
+          CR_PAGES_BRANCH: gh-pages
+          CR_PAGES_INDEX_PATH: index.yaml
+        run: |
+          cr package helm/telegram-survey-bot
+          cr upload --owner $CR_OWNER --git-repo $CR_GIT_REPO --token $CR_TOKEN --package-path $CR_PACKAGE_PATH --release-name-template "chart-{{ .Version }}"
+          cr index --owner $CR_OWNER --git-repo $CR_GIT_REPO --token $CR_TOKEN --charts-repo https://$CR_OWNER.github.io/$CR_GIT_REPO --package-path $CR_PACKAGE_PATH --index-path $CR_INDEX_PATH --push
