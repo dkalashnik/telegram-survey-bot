@@ -1,8 +1,0 @@
-.git
-.github
-.env
-.env.example
-PRPs
-docs
-tmp
-**/*.md
