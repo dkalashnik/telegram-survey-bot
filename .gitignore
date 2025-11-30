@@ -19,3 +19,4 @@ build/
 postgres_data/
 
 .serena/
+.DS_Store
