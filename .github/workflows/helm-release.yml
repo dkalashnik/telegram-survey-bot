@@ -4,8 +4,6 @@ on:
   push:
     tags:
       - "v*.*.*"
-    branches-ignore:
-      - gh-pages
 
 permissions:
   contents: write
