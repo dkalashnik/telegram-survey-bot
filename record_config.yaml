@@ -49,7 +49,3 @@ sections:
         prompt: "Любые комментарии или заметки:"
         type: text
         store_key: notes
-
-# Можно добавить метаданные, если нужно
-# metadata:
-#   version: 1.0

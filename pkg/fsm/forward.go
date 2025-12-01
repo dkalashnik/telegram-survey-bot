@@ -7,6 +7,7 @@ import (
 	"log"
 	"sort"
 	"text/template"
+	"time"
 
 	"github.com/dkalashnik/telegram-survey-bot/pkg/config"
 	"github.com/dkalashnik/telegram-survey-bot/pkg/ports/botport"
@@ -28,25 +29,28 @@ type forwardSection struct {
 }
 
 type forwardPayload struct {
-	UserID   int64
-	UserName string
-	Sections []forwardSection
+	UserID    int64
+	UserName  string
+	CreatedAt string
+	Sections  []forwardSection
 }
 
 var forwardTpl = template.Must(template.New("forward").Parse(`Ответы пользователя {{.UserName}} (ID: {{.UserID}})
+Дата записи: {{.CreatedAt}}
 {{range .Sections}}## {{.Title}}
-{{range .Questions}}- {{.Prompt}}: {{.Answer}}
+{{range .Questions}}- {{.Prompt}}:
+  {{.Answer}}
 {{end}}
 {{end}}`))
 
 func handleForwardAnsweredSections(ctx context.Context, userState *state.UserState, botPort botport.BotPort, recordConfig *config.RecordConfig, chatID int64) {
 	targetUserID := config.GetTargetUserID()
-	handleForwardToTarget(ctx, userState, botPort, recordConfig, chatID, targetUserID, true)
+	handleForwardToTarget(ctx, userState, botPort, recordConfig, chatID, targetUserID, false)
 }
 
 func handleForwardToTarget(ctx context.Context, userState *state.UserState, botPort botport.BotPort, recordConfig *config.RecordConfig, chatID int64, targetUserID int64, clearOnSuccess bool) {
 	forwardWithTarget(ctx, userState, botPort, recordConfig, chatID, targetUserID, clearOnSuccess, true, func(id int64) string {
-		return fmt.Sprintf("Ответы отправлены на ID %d и %s.", id, successSuffix(clearOnSuccess))
+		return fmt.Sprintf("Ответы отправлены на ID %d.", id)
 	})
 }
 
@@ -102,13 +106,6 @@ func forwardWithTarget(ctx context.Context, userState *state.UserState, botPort 
 	_, _ = botPort.SendMessage(ctx, chatID, confirmation, nil)
 }
 
-func successSuffix(clear bool) string {
-	if clear {
-		return "очищены"
-	}
-	return "оставлены в черновиках"
-}
-
 // selectRecordForForward chooses the most recent saved record if present; otherwise falls back to the current draft.
 // Only the selected record is cleared after a successful forward; other saved records remain intact.
 func selectRecordForForward(userState *state.UserState) *state.Record {
@@ -153,10 +150,16 @@ func buildForwardPayload(recordConfig *config.RecordConfig, record *state.Record
 		})
 	}
 
+	created := record.CreatedAt
+	if created.IsZero() {
+		created = time.Now()
+	}
+
 	return forwardPayload{
-		UserID:   userState.UserID,
-		UserName: userState.UserName,
-		Sections: sections,
+		UserID:    userState.UserID,
+		UserName:  userState.UserName,
+		CreatedAt: created.Format("02.01.2006 15:04"),
+		Sections:  sections,
 	}
 }
 

@@ -40,6 +40,7 @@ const (
 
 const (
 	ActionSaveRecord    = "save_record"
+	ActionNewRecord     = "new_record"
 	ActionExitMenu      = "exit_menu"
 	ActionCancelSection = "cancel_section"
 	ActionShareLast     = "share_last"

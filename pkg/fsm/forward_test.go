@@ -61,17 +61,16 @@ func TestHandleForwardAnsweredSectionsSuccessClearsAnswers(t *testing.T) {
 	userState := &state.UserState{
 		UserID:      1,
 		UserName:    "User One",
-		Records:     []*state.Record{rec, state.NewRecord()}, // ensure other saved records are preserved
+		Records:     []*state.Record{rec},
 		MainMenuFSM: fsmCreator.NewMainMenuFSM(),
 		RecordFSM:   fsmCreator.NewRecordFSM(),
 	}
-	userState.Records[1].IsSaved = true
 	adapter := &fakeadapter.FakeAdapter{}
 
 	handleForwardAnsweredSections(context.Background(), userState, adapter, rc, 1)
 
-	if len(userState.Records) != 1 || userState.CurrentRecord != nil {
-		t.Fatalf("expected other saved records preserved and forwarded removed, got records=%d current=%v", len(userState.Records), userState.CurrentRecord)
+	if len(userState.Records) != 1 {
+		t.Fatalf("expected records preserved after forward, got %d", len(userState.Records))
 	}
 	if len(adapter.Calls) < 2 {
 		t.Fatalf("expected at least two sends (target + confirmation), got %d", len(adapter.Calls))

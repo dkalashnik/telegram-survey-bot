@@ -3,6 +3,7 @@ package fsm
 import (
 	"context"
 	"fmt"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/config"
 	"github.com/dkalashnik/telegram-survey-bot/pkg/ports/botport"
 	"github.com/dkalashnik/telegram-survey-bot/pkg/state"
 	"log"
@@ -38,8 +39,8 @@ func sendMainMenu(ctx context.Context, botPort botport.BotPort, userState *state
 
 	mainMenuKeyboard := tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton(ButtonMainMenuShowRecord),
 			tgbotapi.NewKeyboardButton(ButtonMainMenuFillRecord),
+			tgbotapi.NewKeyboardButton(ButtonMainMenuShowRecord),
 		),
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(ButtonMainMenuSendSelf),
@@ -55,7 +56,7 @@ func sendMainMenu(ctx context.Context, botPort botport.BotPort, userState *state
 	}
 }
 
-func viewLastRecordHandler(ctx context.Context, userState *state.UserState, botPort botport.BotPort, chatID int64) {
+func viewLastRecordHandler(ctx context.Context, userState *state.UserState, botPort botport.BotPort, recordConfig *config.RecordConfig, chatID int64) {
 	var lastRecord *state.Record
 	for i := len(userState.Records) - 1; i >= 0; i-- {
 		if userState.Records[i].IsSaved {
@@ -69,8 +70,14 @@ func viewLastRecordHandler(ctx context.Context, userState *state.UserState, botP
 		return
 	}
 
-	recordText := formatRecordForDisplay(lastRecord)
-	status := "Сохранена"
+	payload := buildForwardPayload(recordConfig, lastRecord, userState)
+	recordText, err := renderForwardMessage(payload)
+	if err != nil {
+		log.Printf("[viewLastRecordHandler] Error rendering last record for user %d: %v", chatID, err)
+		_, _ = botPort.SendMessage(ctx, chatID, "Не удалось показать запись.", nil)
+		return
+	}
+	status := fmt.Sprintf("Сохранена (%s)", payload.CreatedAt)
 
 	shareKeyboard := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
@@ -79,7 +86,7 @@ func viewLastRecordHandler(ctx context.Context, userState *state.UserState, botP
 	)
 
 	msgText := fmt.Sprintf("📄 Последняя запись (Статус: %s):\n\n%s", status, recordText)
-	_, err := botPort.SendMessage(ctx, chatID, msgText, shareKeyboard)
+	_, err = botPort.SendMessage(ctx, chatID, msgText, shareKeyboard)
 	if err != nil {
 		log.Printf("[viewLastRecordHandler] Error sending last record for user %d: %v", chatID, err)
 	}
