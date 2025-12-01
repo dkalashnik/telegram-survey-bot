@@ -73,7 +73,7 @@ sections:
 
 ### Forwarding answered sections
 
-- Main menu includes “Отправить Терапевту” (sends to `TARGET_USER_ID`, clears the forwarded record on success) and “Отправить Себе” (sends the same payload back to your chat without clearing).
+- Main menu включает “Отправить Терапевту” (sends to `TARGET_USER_ID`) и “Отправить Себе” (присылает ответы вам в чат без очистки).
 - Both aggregate the latest saved record (falls back to current draft) and render all sections via Go template, substituting `no_answer` for blanks. On failure, nothing is cleared and the operator is notified via bot message/logs.
 
 ## Running the Bot Locally

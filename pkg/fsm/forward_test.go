@@ -155,11 +155,11 @@ func TestHandleForwardToSelfDoesNotClearAnswers(t *testing.T) {
 	if len(userState.Records) != 1 {
 		t.Fatalf("expected records kept after sending to self, got %d", len(userState.Records))
 	}
-	if adapter.Calls == nil || len(adapter.Calls) < 2 {
-		t.Fatalf("expected two sends (self target + confirmation), got %+v", adapter.Calls)
+	if adapter.Calls == nil || len(adapter.Calls) != 1 {
+		t.Fatalf("expected single send to self without confirmation, got %+v", adapter.Calls)
 	}
 	if adapter.Calls[0].ChatID != userState.UserID {
-		t.Fatalf("expected first send to self %d, got %+v", userState.UserID, adapter.Calls[0])
+		t.Fatalf("expected send to self %d, got %+v", userState.UserID, adapter.Calls[0])
 	}
 }
 

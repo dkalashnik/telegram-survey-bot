@@ -122,9 +122,11 @@ func showSectionSelectionMenu(ctx context.Context, userState *state.UserState, b
 	actionRow := tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData("💾 Сохранить запись", CallbackActionPrefix+ActionSaveRecord),
 		tgbotapi.NewInlineKeyboardButtonData("🆕 Начать новую запись", CallbackActionPrefix+ActionNewRecord),
+	)
+	exitRow := tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData("⬆️ Выйти в меню", CallbackActionPrefix+ActionExitMenu),
 	)
-	keyboard.InlineKeyboard = append(keyboard.InlineKeyboard, actionRow)
+	keyboard.InlineKeyboard = append(keyboard.InlineKeyboard, actionRow, exitRow)
 
 	var sentMsg botport.BotMessage
 	var err error

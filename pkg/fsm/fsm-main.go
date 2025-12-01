@@ -40,7 +40,6 @@ func sendMainMenu(ctx context.Context, botPort botport.BotPort, userState *state
 	mainMenuKeyboard := tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(ButtonMainMenuFillRecord),
-			tgbotapi.NewKeyboardButton(ButtonMainMenuShowRecord),
 		),
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(ButtonMainMenuSendSelf),

@@ -102,6 +102,11 @@ func forwardWithTarget(ctx context.Context, userState *state.UserState, botPort 
 
 		clearUserAnswers(userState, record)
 	}
+
+	if targetUserID == chatID && !clearOnSuccess {
+		return
+	}
+
 	confirmation := successText(targetUserID)
 	_, _ = botPort.SendMessage(ctx, chatID, confirmation, nil)
 }

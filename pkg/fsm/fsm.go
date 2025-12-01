@@ -158,10 +158,6 @@ func handleMessage(ctx context.Context, message *tgbotapi.Message, userState *st
 
 			hideKeyboard(ctx, botPort, chatID, "Начинаем ввод/продолжение записи...")
 
-		case ButtonMainMenuShowRecord:
-			log.Printf("[handleMessage] User %d requested last record view", userState.UserID)
-			viewLastRecordHandler(ctx, userState, botPort, recordConfig, chatID)
-
 		case ButtonMainMenuSendSelf:
 			log.Printf("[handleMessage] User %d requested forward to self", userState.UserID)
 			handleForwardToSelf(ctx, userState, botPort, recordConfig, chatID)

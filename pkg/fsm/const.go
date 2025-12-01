@@ -48,7 +48,6 @@ const (
 
 const (
 	ButtonMainMenuFillRecord    = "Заполнить запись"
-	ButtonMainMenuShowRecord    = "Показать запись"
 	ButtonMainMenuSendSelf      = "Отправить Себе"
 	ButtonMainMenuSendTherapist = "Отправить Терапевту"
 )
