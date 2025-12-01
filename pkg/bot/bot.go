@@ -106,6 +106,18 @@ func (c *Client) RemoveReplyKeyboard(chatID int64, text string) (tgbotapi.Messag
 	return sentMsg, nil
 }
 
+func (c *Client) DeleteMessage(chatID int64, messageID int) error {
+	cfg := tgbotapi.DeleteMessageConfig{
+		ChatID:    chatID,
+		MessageID: messageID,
+	}
+	_, err := c.api.Request(cfg)
+	if err != nil {
+		return fmt.Errorf("failed to delete message %d: %w", messageID, err)
+	}
+	return nil
+}
+
 func (c *Client) GetUpdatesChan(timeout int) tgbotapi.UpdatesChannel {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = timeout

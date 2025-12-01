@@ -47,6 +47,7 @@ Set the required environment variables before launching the bot (use a shell exp
 export TELEGRAM_BOT_TOKEN=123456:ABCDEF   # required
 export TARGET_USER_ID=1122334455          # required for forwarding aggregated answers
 export TELEGRAM_ALLOWED_CHAT_IDS="12345,67890" # optional gating example
+export DELETE_USER_MESSAGES=true          # optional; deletes user text answers after processing
 ```
 
 Runtime behavior comes from `record_config.yaml`. A section contains ordered questions; each question has an `id`, a prompt, answer `type`, and `store_key`. Button questions specify `options.text` (shown to the user) and `options.value` (stored).

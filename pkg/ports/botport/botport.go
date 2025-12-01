@@ -71,4 +71,5 @@ type BotPort interface {
 	SendMessage(ctx context.Context, chatID int64, text string, markup interface{}) (BotMessage, error)
 	EditMessage(ctx context.Context, chatID int64, messageID int, text string, markup interface{}) (BotMessage, error)
 	AnswerCallback(ctx context.Context, callbackID string, text string) error
+	DeleteMessage(ctx context.Context, chatID int64, messageID int) error
 }

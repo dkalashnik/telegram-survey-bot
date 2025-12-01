@@ -56,6 +56,11 @@ const (
 	InputSourceCallback AnswerInputSource = "callback"
 )
 
+const (
+	TypeText    = "text"
+	TypeButtons = "buttons"
+)
+
 // AnswerInput wraps user responses in a transport-agnostic struct.
 type AnswerInput struct {
 	Source       AnswerInputSource

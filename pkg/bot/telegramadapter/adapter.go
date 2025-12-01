@@ -28,6 +28,7 @@ type telegramClient interface {
 	SendMessage(chatID int64, text string, markup interface{}) (tgbotapi.Message, error)
 	EditMessageText(chatID int64, messageID int, text string, markup *tgbotapi.InlineKeyboardMarkup) (tgbotapi.Message, error)
 	AnswerCallback(callbackID string, text string) error
+	DeleteMessage(chatID int64, messageID int) error
 }
 
 // Adapter wraps a Telegram client and satisfies botport.BotPort.
@@ -94,6 +95,18 @@ func (a *Adapter) AnswerCallback(ctx context.Context, callbackID string, text st
 		return a.wrapAndLogError("answer_callback", 0, 0, err)
 	}
 	a.log("answer_callback", map[string]any{"callback_id": callbackID})
+	return nil
+}
+
+// DeleteMessage removes a Telegram message.
+func (a *Adapter) DeleteMessage(ctx context.Context, chatID int64, messageID int) error {
+	if err := ctx.Err(); err != nil {
+		return wrapContextError("delete_message", err)
+	}
+	if err := a.client.DeleteMessage(chatID, messageID); err != nil {
+		return a.wrapAndLogError("delete_message", chatID, messageID, err)
+	}
+	a.log("delete_message", map[string]any{"chat_id": chatID, "message_id": messageID})
 	return nil
 }
 

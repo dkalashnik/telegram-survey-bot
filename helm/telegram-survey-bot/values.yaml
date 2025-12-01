@@ -45,6 +45,7 @@ env:
   targetUserId: ""
   recordConfig: "" # Required: inline YAML for record_config.yaml
   secretRef: ""    # Optional existing secret name with keys TELEGRAM_BOT_TOKEN, TARGET_USER_ID
+  deleteUserMessages: true  # Delete user text answers after processing
 
 volumeMounts: []
 volumes: []
