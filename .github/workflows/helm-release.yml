@@ -41,7 +41,6 @@ jobs:
           push: true
           tags: |
             dkalashnik/telegram-survey-bot:latest
-            dkalashnik/telegram-survey-bot:${{ github.sha }}
             dkalashnik/telegram-survey-bot:${{ env.VERSION }}
 
   chart:

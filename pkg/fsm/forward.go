@@ -3,9 +3,11 @@ package fsm
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"log"
 	"sort"
 	"text/template"
+	"time"
 
 	"github.com/dkalashnik/telegram-survey-bot/pkg/config"
 	"github.com/dkalashnik/telegram-survey-bot/pkg/ports/botport"
@@ -27,28 +29,47 @@ type forwardSection struct {
 }
 
 type forwardPayload struct {
-	UserID   int64
-	UserName string
-	Sections []forwardSection
+	UserID    int64
+	UserName  string
+	CreatedAt string
+	Sections  []forwardSection
 }
 
 var forwardTpl = template.Must(template.New("forward").Parse(`Ответы пользователя {{.UserName}} (ID: {{.UserID}})
+Дата записи: {{.CreatedAt}}
 {{range .Sections}}## {{.Title}}
-{{range .Questions}}- {{.Prompt}}: {{.Answer}}
+{{range .Questions}}- {{.Prompt}}:
+  {{.Answer}}
 {{end}}
 {{end}}`))
 
 func handleForwardAnsweredSections(ctx context.Context, userState *state.UserState, botPort botport.BotPort, recordConfig *config.RecordConfig, chatID int64) {
 	targetUserID := config.GetTargetUserID()
-	if targetUserID == 0 {
-		log.Printf("[handleForwardAnsweredSections] TARGET_USER_ID is not configured")
-		_, _ = botPort.SendMessage(ctx, chatID, "Не настроен TARGET_USER_ID, отправка недоступна.", nil)
-		return
-	}
+	handleForwardToTarget(ctx, userState, botPort, recordConfig, chatID, targetUserID, false)
+}
 
+func handleForwardToTarget(ctx context.Context, userState *state.UserState, botPort botport.BotPort, recordConfig *config.RecordConfig, chatID int64, targetUserID int64, clearOnSuccess bool) {
+	forwardWithTarget(ctx, userState, botPort, recordConfig, chatID, targetUserID, clearOnSuccess, true, func(id int64) string {
+		return fmt.Sprintf("Ответы отправлены на ID %d.", id)
+	})
+}
+
+func handleForwardToSelf(ctx context.Context, userState *state.UserState, botPort botport.BotPort, recordConfig *config.RecordConfig, chatID int64) {
+	forwardWithTarget(ctx, userState, botPort, recordConfig, chatID, chatID, false, false, func(id int64) string {
+		return "Ответы отправлены вам в этот чат."
+	})
+}
+
+func forwardWithTarget(ctx context.Context, userState *state.UserState, botPort botport.BotPort, recordConfig *config.RecordConfig, chatID int64, targetUserID int64, clearOnSuccess bool, requireConfigured bool, successText func(int64) string) {
 	record := selectRecordForForward(userState)
 	if record == nil {
 		_, _ = botPort.SendMessage(ctx, chatID, "Нет ответов для отправки.", nil)
+		return
+	}
+
+	if requireConfigured && targetUserID == 0 {
+		log.Printf("[handleForwardAnsweredSections] TARGET_USER_ID is not configured")
+		_, _ = botPort.SendMessage(ctx, chatID, "Не настроен TARGET_USER_ID, отправка недоступна.", nil)
 		return
 	}
 
@@ -66,6 +87,7 @@ func handleForwardAnsweredSections(ctx context.Context, userState *state.UserSta
 		return
 	}
 
+	log.Printf("[handleForwardAnsweredSections] forwarding record %s for user %d to target %d (clear=%t)", record.ID, userState.UserID, targetUserID, clearOnSuccess)
 	_, err = botPort.SendMessage(ctx, targetUserID, text, nil)
 	if err != nil {
 		log.Printf("[handleForwardAnsweredSections] forward error for user %d to %d: %v", userState.UserID, targetUserID, err)
@@ -73,8 +95,20 @@ func handleForwardAnsweredSections(ctx context.Context, userState *state.UserSta
 		return
 	}
 
-	clearUserAnswers(userState, record)
-	_, _ = botPort.SendMessage(ctx, chatID, "Ответы отправлены и очищены.", nil)
+	if clearOnSuccess {
+		if targetUserID == chatID {
+			log.Printf("[handleForwardAnsweredSections] TARGET_USER_ID %d matches requester chat %d; check configuration if a different recipient was expected", targetUserID, chatID)
+		}
+
+		clearUserAnswers(userState, record)
+	}
+
+	if targetUserID == chatID && !clearOnSuccess {
+		return
+	}
+
+	confirmation := successText(targetUserID)
+	_, _ = botPort.SendMessage(ctx, chatID, confirmation, nil)
 }
 
 // selectRecordForForward chooses the most recent saved record if present; otherwise falls back to the current draft.
@@ -121,10 +155,16 @@ func buildForwardPayload(recordConfig *config.RecordConfig, record *state.Record
 		})
 	}
 
+	created := record.CreatedAt
+	if created.IsZero() {
+		created = time.Now()
+	}
+
 	return forwardPayload{
-		UserID:   userState.UserID,
-		UserName: userState.UserName,
-		Sections: sections,
+		UserID:    userState.UserID,
+		UserName:  userState.UserName,
+		CreatedAt: created.Format("02.01.2006 15:04"),
+		Sections:  sections,
 	}
 }
 

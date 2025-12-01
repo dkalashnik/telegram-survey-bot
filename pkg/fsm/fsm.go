@@ -151,32 +151,19 @@ func handleMessage(ctx context.Context, message *tgbotapi.Message, userState *st
 
 	if mainState == StateIdle && recordState == StateRecordIdle {
 		switch text {
-		case ButtonMainMenuAddRecord:
-			log.Printf("[handleMessage] User %d initiated record creation/resume", userState.UserID)
+		case ButtonMainMenuFillRecord:
+			log.Printf("[handleMessage] User %d initiated record creation", userState.UserID)
 
 			startOrResumeRecordCreation(ctx, userState, botPort, recordConfig, chatID)
 
 			hideKeyboard(ctx, botPort, chatID, "Начинаем ввод/продолжение записи...")
 
-		case ButtonMainMenuShowRecord:
-			log.Printf("[handleMessage] User %d requested last record view", userState.UserID)
-			viewLastRecordHandler(ctx, userState, botPort, chatID)
+		case ButtonMainMenuSendSelf:
+			log.Printf("[handleMessage] User %d requested forward to self", userState.UserID)
+			handleForwardToSelf(ctx, userState, botPort, recordConfig, chatID)
 
-		case ButtonMainMenuListRecords:
-			log.Printf("[handleMessage] User %d requested record list view", userState.UserID)
-
-			userState.ListOffset = 0
-			err := userState.MainMenuFSM.Event(ctx, EventViewList, userState, botPort, recordConfig, chatID, 0)
-			if err != nil {
-				log.Printf("[handleMessage] Error triggering EventViewList for user %d: %v", userState.UserID, err)
-				_, _ = botPort.SendMessage(ctx, chatID, "Не удалось открыть список.", nil)
-			} else {
-
-				viewListHandler(ctx, userState, botPort, chatID, 0)
-			}
-
-		case ButtonMainMenuForwardAll:
-			log.Printf("[handleMessage] User %d requested forward of answered sections", userState.UserID)
+		case ButtonMainMenuSendTherapist:
+			log.Printf("[handleMessage] User %d requested forward to therapist", userState.UserID)
 			handleForwardAnsweredSections(ctx, userState, botPort, recordConfig, chatID)
 
 		default:
@@ -304,6 +291,14 @@ func handleCallbackQuery(ctx context.Context, query *tgbotapi.CallbackQuery, use
 					log.Printf("[handleCallbackQuery] Error triggering EventSaveFullRecord for user %d: %v", userState.UserID, err)
 				}
 			}
+		case ActionNewRecord:
+			log.Printf("[handleCallbackQuery] User %d requested new record", userState.UserID)
+			if recordState == StateSelectingSection {
+				resetCurrentRecord(ctx, userState, botPort, recordConfig, chatID, messageID)
+			} else if recordState == StateRecordIdle {
+				userState.CurrentRecord = state.NewRecord()
+				startOrResumeRecordCreation(ctx, userState, botPort, recordConfig, chatID)
+			}
 		case ActionExitMenu:
 			if recordState == StateSelectingSection {
 				log.Printf("[handleCallbackQuery] User %d requested exit to menu", userState.UserID)
@@ -314,7 +309,7 @@ func handleCallbackQuery(ctx context.Context, query *tgbotapi.CallbackQuery, use
 			}
 		case ActionShareLast:
 			log.Printf("[handleCallbackQuery] User %d requested share last record", userState.UserID)
-			handleShareLastRecord(ctx, userState, botPort, chatID)
+			handleShareLastRecord(ctx, userState, botPort, recordConfig, chatID)
 
 		default:
 			log.Printf("[handleCallbackQuery] Unknown action '%s' from user %d", actionName, userState.UserID)
@@ -465,8 +460,18 @@ func handleAnswerResult(ctx context.Context, result questions.AnswerResult, user
 func startOrResumeRecordCreation(ctx context.Context, userState *state.UserState, botPort botport.BotPort, recordConfig *config.RecordConfig, chatID int64) {
 
 	if userState.CurrentRecord == nil {
-		log.Printf("[startOrResumeRecordCreation] User %d starting new record.", userState.UserID)
-		userState.CurrentRecord = state.NewRecord()
+		if saved := lastSavedRecord(userState); saved != nil {
+			log.Printf("[startOrResumeRecordCreation] User %d loading last saved record %s into draft.", userState.UserID, saved.ID)
+			copied := state.NewRecord()
+			for k, v := range saved.Data {
+				copied.Data[k] = v
+			}
+			copied.CreatedAt = saved.CreatedAt
+			userState.CurrentRecord = copied
+		} else {
+			log.Printf("[startOrResumeRecordCreation] User %d starting new record.", userState.UserID)
+			userState.CurrentRecord = state.NewRecord()
+		}
 	} else {
 		log.Printf("[startOrResumeRecordCreation] User %d resuming existing draft.", userState.UserID)
 
@@ -499,7 +504,7 @@ func hideKeyboard(ctx context.Context, botPort botport.BotPort, chatID int64, te
 	}
 }
 
-func handleShareLastRecord(ctx context.Context, userState *state.UserState, botPort botport.BotPort, chatID int64) {
+func handleShareLastRecord(ctx context.Context, userState *state.UserState, botPort botport.BotPort, recordConfig *config.RecordConfig, chatID int64) {
 
 	var lastRecord *state.Record
 	for i := len(userState.Records) - 1; i >= 0; i-- {
@@ -513,6 +518,29 @@ func handleShareLastRecord(ctx context.Context, userState *state.UserState, botP
 		_, _ = botPort.SendMessage(ctx, chatID, "Нет сохраненных записей для пересылки.", nil)
 		return
 	}
-	shareText := formatRecordForDisplay(lastRecord)
+	payload := buildForwardPayload(recordConfig, lastRecord, userState)
+	shareText, err := renderForwardMessage(payload)
+	if err != nil {
+		log.Printf("[handleShareLastRecord] render error for user %d: %v", userState.UserID, err)
+		_, _ = botPort.SendMessage(ctx, chatID, "Не удалось подготовить запись для отправки.", nil)
+		return
+	}
 	_, _ = botPort.SendMessage(ctx, chatID, fmt.Sprintf("Чтобы поделиться, скопируйте текст ниже:\n\n---\n%s\n---", shareText), nil)
+}
+
+func resetCurrentRecord(ctx context.Context, userState *state.UserState, botPort botport.BotPort, recordConfig *config.RecordConfig, chatID int64, messageID int) {
+	userState.CurrentRecord = state.NewRecord()
+	userState.CurrentSection = ""
+	userState.CurrentQuestion = 0
+	showSectionSelectionMenu(ctx, userState, botPort, recordConfig, chatID, messageID, userState.CurrentRecord.Data, nil)
+}
+
+func lastSavedRecord(userState *state.UserState) *state.Record {
+	for i := len(userState.Records) - 1; i >= 0; i-- {
+		r := userState.Records[i]
+		if r != nil && r.IsSaved {
+			return r
+		}
+	}
+	return nil
 }

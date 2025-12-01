@@ -96,9 +96,13 @@ func enterSelectingSection(ctx context.Context, e *fsm.Event) {
 	recordData := currentRec.Data
 	log.Printf("[enterSelectingSection] CurrentRecord check passed for User %d.", userID)
 
+	showSectionSelectionMenu(ctx, userState, botPort, recordConfig, chatID, messageID, recordData, e)
+}
+
+func showSectionSelectionMenu(ctx context.Context, userState *state.UserState, botPort botport.BotPort, recordConfig *config.RecordConfig, chatID int64, messageID int, recordData map[string]string, evt *fsm.Event) {
 	prompt := "Выберите секцию для заполнения/редактирования или действие:"
 	keyboard := tgbotapi.NewInlineKeyboardMarkup()
-	log.Printf("[enterSelectingSection] Building keyboard for User %d...", userID)
+	log.Printf("[enterSelectingSection] Building keyboard for User %d...", chatID)
 
 	sectionIDs := getSortedSectionIDs(recordConfig.Sections)
 	for _, sectionID := range sectionIDs {
@@ -117,9 +121,12 @@ func enterSelectingSection(ctx context.Context, e *fsm.Event) {
 
 	actionRow := tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData("💾 Сохранить запись", CallbackActionPrefix+ActionSaveRecord),
+		tgbotapi.NewInlineKeyboardButtonData("🆕 Начать новую запись", CallbackActionPrefix+ActionNewRecord),
+	)
+	exitRow := tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData("⬆️ Выйти в меню", CallbackActionPrefix+ActionExitMenu),
 	)
-	keyboard.InlineKeyboard = append(keyboard.InlineKeyboard, actionRow)
+	keyboard.InlineKeyboard = append(keyboard.InlineKeyboard, actionRow, exitRow)
 
 	var sentMsg botport.BotMessage
 	var err error
@@ -132,7 +139,9 @@ func enterSelectingSection(ctx context.Context, e *fsm.Event) {
 	if err != nil {
 		if !strings.Contains(err.Error(), "message is not modified") {
 			log.Printf("[enterSelectingSection] Error sending/editing message for user %d: %v", chatID, err)
-			_ = e.FSM.Event(ctx, EventForceExit, userState, botPort, recordConfig, chatID, 0, "error displaying section menu")
+			if evt != nil {
+				_ = evt.FSM.Event(ctx, EventForceExit, userState, botPort, recordConfig, chatID, 0, "error displaying section menu")
+			}
 		} else {
 			sentMsg.MessageID = messageID
 		}
@@ -144,7 +153,7 @@ func enterSelectingSection(ctx context.Context, e *fsm.Event) {
 		log.Printf("[enterSelectingSection] Section selection menu shown/updated for user %d (MessageID: %d)", chatID, sentMsg.MessageID)
 	}
 
-	log.Printf("[enterSelectingSection] END - User %d", userID)
+	log.Printf("[enterSelectingSection] END - User %d", chatID)
 }
 
 func askCurrentQuestion(ctx context.Context, userState *state.UserState, botPort botport.BotPort, recordConfig *config.RecordConfig, messageIDToEdit int) {

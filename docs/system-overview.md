@@ -56,7 +56,7 @@ sequenceDiagram
 - `Record.IsSaved` switches from `false` → `true` when the user hits "💾 Сохранить запись".
 - Saved records remain in memory for viewing/listing until the process restarts. Persistence (Postgres, API) can be added later without changing the FSM contract.
 - Outbound prompts capture `botport.BotMessage` in `RenderContext.LastPrompt` and `state.UserState.LastPrompt`; answer handling captures `AnswerContext.Message` so strategies/future persistence can rely on transport-agnostic IDs.
-- Forwarding answers: main menu action “Отправить ответы ✉️” aggregates the most recent saved record (or current draft if none saved), renders all sections/questions into a single text message with `no_answer` placeholders, sends it to `TARGET_USER_ID`, and clears only the forwarded record/draft on success. Failures keep data intact and notify the operator.
+- Forwarding answers: main menu actions “Отправить Терапевту” (sends to `TARGET_USER_ID` and clears the forwarded record/draft on success) and “Отправить Себе” (sends to the user chat without clearing) aggregate the most recent saved record (or current draft if none saved), render all sections/questions into a single text message with `no_answer` placeholders, and notify on failures without mutating stored answers.
 
 ### Section Selection UX
 

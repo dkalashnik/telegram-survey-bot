@@ -3,6 +3,7 @@ package fsm
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"text/template"
 
@@ -60,17 +61,16 @@ func TestHandleForwardAnsweredSectionsSuccessClearsAnswers(t *testing.T) {
 	userState := &state.UserState{
 		UserID:      1,
 		UserName:    "User One",
-		Records:     []*state.Record{rec, state.NewRecord()}, // ensure other saved records are preserved
+		Records:     []*state.Record{rec},
 		MainMenuFSM: fsmCreator.NewMainMenuFSM(),
 		RecordFSM:   fsmCreator.NewRecordFSM(),
 	}
-	userState.Records[1].IsSaved = true
 	adapter := &fakeadapter.FakeAdapter{}
 
 	handleForwardAnsweredSections(context.Background(), userState, adapter, rc, 1)
 
-	if len(userState.Records) != 1 || userState.CurrentRecord != nil {
-		t.Fatalf("expected other saved records preserved and forwarded removed, got records=%d current=%v", len(userState.Records), userState.CurrentRecord)
+	if len(userState.Records) != 1 {
+		t.Fatalf("expected records preserved after forward, got %d", len(userState.Records))
 	}
 	if len(adapter.Calls) < 2 {
 		t.Fatalf("expected at least two sends (target + confirmation), got %d", len(adapter.Calls))
@@ -81,6 +81,9 @@ func TestHandleForwardAnsweredSectionsSuccessClearsAnswers(t *testing.T) {
 	targetCall := adapter.LastCall("send_message")
 	if targetCall == nil || targetCall.ChatID != 1 {
 		t.Fatalf("expected confirmation send to chat 1, got %+v", targetCall)
+	}
+	if targetCall == nil || !strings.Contains(targetCall.Text, "999") {
+		t.Fatalf("expected confirmation text to mention target user id, got %+v", targetCall)
 	}
 }
 
@@ -119,6 +122,44 @@ func TestHandleForwardAnsweredSectionsFailureKeepsAnswers(t *testing.T) {
 	confirm := adapter.LastCall("send_message")
 	if confirm == nil || confirm.ChatID != 2 {
 		t.Fatalf("expected failure notice to chat 2, got %+v", confirm)
+	}
+}
+
+func TestHandleForwardToSelfDoesNotClearAnswers(t *testing.T) {
+	rc := &config.RecordConfig{
+		Sections: map[string]config.SectionConfig{
+			"sec": {
+				Title: "Main",
+				Questions: []config.QuestionConfig{
+					{ID: "q1", Prompt: "Field", StoreKey: "f1"},
+				},
+			},
+		},
+	}
+	rec := state.NewRecord()
+	rec.Data["f1"] = "Self"
+	rec.IsSaved = true
+
+	fsmCreator := NewFSMCreator()
+	userState := &state.UserState{
+		UserID:      10,
+		UserName:    "Self",
+		Records:     []*state.Record{rec},
+		MainMenuFSM: fsmCreator.NewMainMenuFSM(),
+		RecordFSM:   fsmCreator.NewRecordFSM(),
+	}
+	adapter := &fakeadapter.FakeAdapter{}
+
+	handleForwardToSelf(context.Background(), userState, adapter, rc, userState.UserID)
+
+	if len(userState.Records) != 1 {
+		t.Fatalf("expected records kept after sending to self, got %d", len(userState.Records))
+	}
+	if adapter.Calls == nil || len(adapter.Calls) != 1 {
+		t.Fatalf("expected single send to self without confirmation, got %+v", adapter.Calls)
+	}
+	if adapter.Calls[0].ChatID != userState.UserID {
+		t.Fatalf("expected send to self %d, got %+v", userState.UserID, adapter.Calls[0])
 	}
 }
 

@@ -40,14 +40,14 @@ const (
 
 const (
 	ActionSaveRecord    = "save_record"
+	ActionNewRecord     = "new_record"
 	ActionExitMenu      = "exit_menu"
 	ActionCancelSection = "cancel_section"
 	ActionShareLast     = "share_last"
 )
 
 const (
-	ButtonMainMenuAddRecord   = "Добавить/Продолжить запись 📝"
-	ButtonMainMenuShowRecord  = "Посмотреть последнюю запись 📄"
-	ButtonMainMenuListRecords = "Список записей 🗂️"
-	ButtonMainMenuForwardAll  = "Отправить ответы ✉️"
+	ButtonMainMenuFillRecord    = "Заполнить запись"
+	ButtonMainMenuSendSelf      = "Отправить Себе"
+	ButtonMainMenuSendTherapist = "Отправить Терапевту"
 )
