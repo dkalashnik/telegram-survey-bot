@@ -292,9 +292,12 @@ func handleCallbackQuery(ctx context.Context, query *tgbotapi.CallbackQuery, use
 				}
 			}
 		case ActionNewRecord:
+			log.Printf("[handleCallbackQuery] User %d requested new record", userState.UserID)
 			if recordState == StateSelectingSection {
-				log.Printf("[handleCallbackQuery] User %d requested new record", userState.UserID)
 				resetCurrentRecord(ctx, userState, botPort, recordConfig, chatID, messageID)
+			} else if recordState == StateRecordIdle {
+				userState.CurrentRecord = state.NewRecord()
+				startOrResumeRecordCreation(ctx, userState, botPort, recordConfig, chatID)
 			}
 		case ActionExitMenu:
 			if recordState == StateSelectingSection {
@@ -457,8 +460,18 @@ func handleAnswerResult(ctx context.Context, result questions.AnswerResult, user
 func startOrResumeRecordCreation(ctx context.Context, userState *state.UserState, botPort botport.BotPort, recordConfig *config.RecordConfig, chatID int64) {
 
 	if userState.CurrentRecord == nil {
-		log.Printf("[startOrResumeRecordCreation] User %d starting new record.", userState.UserID)
-		userState.CurrentRecord = state.NewRecord()
+		if saved := lastSavedRecord(userState); saved != nil {
+			log.Printf("[startOrResumeRecordCreation] User %d loading last saved record %s into draft.", userState.UserID, saved.ID)
+			copied := state.NewRecord()
+			for k, v := range saved.Data {
+				copied.Data[k] = v
+			}
+			copied.CreatedAt = saved.CreatedAt
+			userState.CurrentRecord = copied
+		} else {
+			log.Printf("[startOrResumeRecordCreation] User %d starting new record.", userState.UserID)
+			userState.CurrentRecord = state.NewRecord()
+		}
 	} else {
 		log.Printf("[startOrResumeRecordCreation] User %d resuming existing draft.", userState.UserID)
 
@@ -520,4 +533,14 @@ func resetCurrentRecord(ctx context.Context, userState *state.UserState, botPort
 	userState.CurrentSection = ""
 	userState.CurrentQuestion = 0
 	showSectionSelectionMenu(ctx, userState, botPort, recordConfig, chatID, messageID, userState.CurrentRecord.Data, nil)
+}
+
+func lastSavedRecord(userState *state.UserState) *state.Record {
+	for i := len(userState.Records) - 1; i >= 0; i-- {
+		r := userState.Records[i]
+		if r != nil && r.IsSaved {
+			return r
+		}
+	}
+	return nil
 }
