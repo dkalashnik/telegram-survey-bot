@@ -69,6 +69,18 @@ func (f *FakeAdapter) AnswerCallback(ctx context.Context, callbackID string, tex
 	return nil
 }
 
+// DeleteMessage records a delete operation.
+func (f *FakeAdapter) DeleteMessage(ctx context.Context, chatID int64, messageID int) error {
+	if err := ctx.Err(); err != nil {
+		return wrapContextError("delete_message", err)
+	}
+	if err := f.maybeFail("delete_message"); err != nil {
+		return err
+	}
+	f.record(Call{Op: "delete_message", ChatID: chatID, MessageID: messageID})
+	return nil
+}
+
 // Fail configures the next call for op to return err (wrapped as BotError if needed).
 func (f *FakeAdapter) Fail(op string, err error) {
 	f.mu.Lock()

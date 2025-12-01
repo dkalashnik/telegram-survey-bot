@@ -118,6 +118,7 @@ type fakeClient struct {
 	sendFn func(chatID int64, text string, markup interface{}) (tgbotapi.Message, error)
 	editFn func(chatID int64, messageID int, text string, markup *tgbotapi.InlineKeyboardMarkup) (tgbotapi.Message, error)
 	cbFn   func(callbackID string, text string) error
+	delFn  func(chatID int64, messageID int) error
 }
 
 func (f *fakeClient) SendMessage(chatID int64, text string, markup interface{}) (tgbotapi.Message, error) {
@@ -139,6 +140,13 @@ func (f *fakeClient) AnswerCallback(callbackID string, text string) error {
 		return nil
 	}
 	return f.cbFn(callbackID, text)
+}
+
+func (f *fakeClient) DeleteMessage(chatID int64, messageID int) error {
+	if f.delFn == nil {
+		return nil
+	}
+	return f.delFn(chatID, messageID)
 }
 
 type testLogger struct {

@@ -46,6 +46,8 @@ spec:
                 secretKeyRef:
                   name: {{ default (printf "%s-secrets" (include "telegram-survey-bot.fullname" .)) .Values.env.secretRef }}
                   key: TARGET_USER_ID
+            - name: DELETE_USER_MESSAGES
+              value: "{{ .Values.env.deleteUserMessages }}"
             - name: RECORD_CONFIG_PATH
               value: /app/record_config.yaml
           ports:

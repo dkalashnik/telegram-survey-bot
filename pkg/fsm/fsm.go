@@ -73,6 +73,7 @@ func HandleUpdate(ctx context.Context, update tgbotapi.Update, botPort botport.B
 func handleMessage(ctx context.Context, message *tgbotapi.Message, userState *state.UserState, botPort botport.BotPort, recordConfig *config.RecordConfig) {
 	chatID := message.Chat.ID
 	text := message.Text
+	userMessageID := message.MessageID
 
 	if message.IsCommand() {
 		switch message.Command() {
@@ -146,6 +147,7 @@ func handleMessage(ctx context.Context, message *tgbotapi.Message, userState *st
 		}
 
 		handleAnswerResult(ctx, result, userState, botPort, recordConfig, userState.LastMessageID)
+		deleteUserTextMessage(ctx, botPort, chatID, userMessageID, question.Type)
 		return
 	}
 
