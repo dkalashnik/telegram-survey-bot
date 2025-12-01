@@ -1,12 +1,12 @@
-name: CI
+name: Dev Build (image only)
 
 on:
   push:
     branches-ignore:
       - gh-pages
-  pull_request:
-    branches-ignore:
-      - gh-pages
+#  pull_request:
+#    branches-ignore:
+#      - gh-pages
 
 jobs:
   test:
@@ -44,6 +44,18 @@ jobs:
           username: ${{ env.DOCKERHUB_USERNAME }}
           password: ${{ env.DOCKERHUB_TOKEN }}
 
+      - name: Extract branch name
+        shell: bash
+        run: |
+          # Extract branch name and sanitize it for Docker tag
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          BRANCH_NAME=${BRANCH_NAME//\//-}
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+
+          # Get short SHA (first 7 characters)
+          SHORT_SHA=${GITHUB_SHA:0:7}
+          echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_ENV
+
       - name: Build image
         uses: docker/build-push-action@v6
         with:
@@ -54,3 +66,4 @@ jobs:
           tags: |
             dkalashnik/telegram-survey-bot:latest
             dkalashnik/telegram-survey-bot:${{ github.sha }}
+            dkalashnik/telegram-survey-bot:dev-${{ env.BRANCH_NAME }}-${{ env.SHORT_SHA }}
