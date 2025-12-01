@@ -151,8 +151,8 @@ func handleMessage(ctx context.Context, message *tgbotapi.Message, userState *st
 
 	if mainState == StateIdle && recordState == StateRecordIdle {
 		switch text {
-		case ButtonMainMenuAddRecord:
-			log.Printf("[handleMessage] User %d initiated record creation/resume", userState.UserID)
+		case ButtonMainMenuFillRecord:
+			log.Printf("[handleMessage] User %d initiated record creation", userState.UserID)
 
 			startOrResumeRecordCreation(ctx, userState, botPort, recordConfig, chatID)
 
@@ -162,21 +162,12 @@ func handleMessage(ctx context.Context, message *tgbotapi.Message, userState *st
 			log.Printf("[handleMessage] User %d requested last record view", userState.UserID)
 			viewLastRecordHandler(ctx, userState, botPort, chatID)
 
-		case ButtonMainMenuListRecords:
-			log.Printf("[handleMessage] User %d requested record list view", userState.UserID)
+		case ButtonMainMenuSendSelf:
+			log.Printf("[handleMessage] User %d requested forward to self", userState.UserID)
+			handleForwardToSelf(ctx, userState, botPort, recordConfig, chatID)
 
-			userState.ListOffset = 0
-			err := userState.MainMenuFSM.Event(ctx, EventViewList, userState, botPort, recordConfig, chatID, 0)
-			if err != nil {
-				log.Printf("[handleMessage] Error triggering EventViewList for user %d: %v", userState.UserID, err)
-				_, _ = botPort.SendMessage(ctx, chatID, "Не удалось открыть список.", nil)
-			} else {
-
-				viewListHandler(ctx, userState, botPort, chatID, 0)
-			}
-
-		case ButtonMainMenuForwardAll:
-			log.Printf("[handleMessage] User %d requested forward of answered sections", userState.UserID)
+		case ButtonMainMenuSendTherapist:
+			log.Printf("[handleMessage] User %d requested forward to therapist", userState.UserID)
 			handleForwardAnsweredSections(ctx, userState, botPort, recordConfig, chatID)
 
 		default:

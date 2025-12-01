@@ -126,6 +126,44 @@ func TestHandleForwardAnsweredSectionsFailureKeepsAnswers(t *testing.T) {
 	}
 }
 
+func TestHandleForwardToSelfDoesNotClearAnswers(t *testing.T) {
+	rc := &config.RecordConfig{
+		Sections: map[string]config.SectionConfig{
+			"sec": {
+				Title: "Main",
+				Questions: []config.QuestionConfig{
+					{ID: "q1", Prompt: "Field", StoreKey: "f1"},
+				},
+			},
+		},
+	}
+	rec := state.NewRecord()
+	rec.Data["f1"] = "Self"
+	rec.IsSaved = true
+
+	fsmCreator := NewFSMCreator()
+	userState := &state.UserState{
+		UserID:      10,
+		UserName:    "Self",
+		Records:     []*state.Record{rec},
+		MainMenuFSM: fsmCreator.NewMainMenuFSM(),
+		RecordFSM:   fsmCreator.NewRecordFSM(),
+	}
+	adapter := &fakeadapter.FakeAdapter{}
+
+	handleForwardToSelf(context.Background(), userState, adapter, rc, userState.UserID)
+
+	if len(userState.Records) != 1 {
+		t.Fatalf("expected records kept after sending to self, got %d", len(userState.Records))
+	}
+	if adapter.Calls == nil || len(adapter.Calls) < 2 {
+		t.Fatalf("expected two sends (self target + confirmation), got %+v", adapter.Calls)
+	}
+	if adapter.Calls[0].ChatID != userState.UserID {
+		t.Fatalf("expected first send to self %d, got %+v", userState.UserID, adapter.Calls[0])
+	}
+}
+
 func TestHandleForwardAnsweredSectionsEmptyAnswers(t *testing.T) {
 	config.SetTargetUserID(555)
 	rc := &config.RecordConfig{Sections: map[string]config.SectionConfig{}}

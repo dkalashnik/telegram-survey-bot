@@ -38,14 +38,12 @@ func sendMainMenu(ctx context.Context, botPort botport.BotPort, userState *state
 
 	mainMenuKeyboard := tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton(ButtonMainMenuAddRecord),
-		),
-		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(ButtonMainMenuShowRecord),
-			tgbotapi.NewKeyboardButton(ButtonMainMenuListRecords),
+			tgbotapi.NewKeyboardButton(ButtonMainMenuFillRecord),
 		),
 		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton(ButtonMainMenuForwardAll),
+			tgbotapi.NewKeyboardButton(ButtonMainMenuSendSelf),
+			tgbotapi.NewKeyboardButton(ButtonMainMenuSendTherapist),
 		),
 	)
 

@@ -60,8 +60,8 @@ stateDiagram-v2
 | `EventForceExit` | Any | Error recovery path invoked when configuration/state mismatches occur. Drafts are kept to avoid data loss. |
 
 ### Main Menu Actions
-- Reply keyboard buttons: "Добавить/Продолжить запись 📝", "Посмотреть последнюю запись 📄", "Список записей 🗂️", and "Отправить ответы ✉️".
-- Forwarding answers: "Отправить ответы ✉️" aggregates the most recent saved record (or current draft if none saved), renders all sections/questions with `no_answer` for blanks, sends the text to `TARGET_USER_ID`, and clears only the forwarded record/draft on success. Failures leave data intact and notify the operator.
+- Reply keyboard buttons: "Заполнить запись", "Показать запись", "Отправить Себе", and "Отправить Терапевту".
+- Forwarding answers: "Отправить Терапевту" aggregates the most recent saved record (or current draft if none saved), renders all sections/questions with `no_answer` for blanks, sends the text to `TARGET_USER_ID`, and clears only the forwarded record/draft on success. "Отправить Себе" sends the same payload back to the user chat without clearing. Failures leave data intact and notify the operator.
 
 ### Callback Highlights
 
