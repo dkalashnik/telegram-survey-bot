@@ -3,6 +3,7 @@ package fsm
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"text/template"
 
@@ -81,6 +82,9 @@ func TestHandleForwardAnsweredSectionsSuccessClearsAnswers(t *testing.T) {
 	targetCall := adapter.LastCall("send_message")
 	if targetCall == nil || targetCall.ChatID != 1 {
 		t.Fatalf("expected confirmation send to chat 1, got %+v", targetCall)
+	}
+	if targetCall == nil || !strings.Contains(targetCall.Text, "999") {
+		t.Fatalf("expected confirmation text to mention target user id, got %+v", targetCall)
 	}
 }
 

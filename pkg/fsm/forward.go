@@ -3,6 +3,7 @@ package fsm
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"log"
 	"sort"
 	"text/template"
@@ -66,6 +67,7 @@ func handleForwardAnsweredSections(ctx context.Context, userState *state.UserSta
 		return
 	}
 
+	log.Printf("[handleForwardAnsweredSections] forwarding record %s for user %d to target %d", record.ID, userState.UserID, targetUserID)
 	_, err = botPort.SendMessage(ctx, targetUserID, text, nil)
 	if err != nil {
 		log.Printf("[handleForwardAnsweredSections] forward error for user %d to %d: %v", userState.UserID, targetUserID, err)
@@ -73,8 +75,13 @@ func handleForwardAnsweredSections(ctx context.Context, userState *state.UserSta
 		return
 	}
 
+	if targetUserID == chatID {
+		log.Printf("[handleForwardAnsweredSections] TARGET_USER_ID %d matches requester chat %d; check configuration if a different recipient was expected", targetUserID, chatID)
+	}
+
 	clearUserAnswers(userState, record)
-	_, _ = botPort.SendMessage(ctx, chatID, "Ответы отправлены и очищены.", nil)
+	confirmation := fmt.Sprintf("Ответы отправлены на ID %d и очищены.", targetUserID)
+	_, _ = botPort.SendMessage(ctx, chatID, confirmation, nil)
 }
 
 // selectRecordForForward chooses the most recent saved record if present; otherwise falls back to the current draft.

@@ -7,11 +7,13 @@ import (
 	"github.com/dkalashnik/telegram-survey-bot/pkg/config"
 	"github.com/dkalashnik/telegram-survey-bot/pkg/fsm"
 	"github.com/dkalashnik/telegram-survey-bot/pkg/fsm/questions"
+	"github.com/dkalashnik/telegram-survey-bot/pkg/ports/botport"
 	"github.com/dkalashnik/telegram-survey-bot/pkg/state"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 func main() {
@@ -45,6 +47,8 @@ func main() {
 		log.Panicf("Failed to create telegram adapter: %v", err)
 	}
 
+	notifyTargetOnStartup(botPort)
+
 	fsmCreator := fsm.NewFSMCreator()
 	stateStore := state.NewStore(fsmCreator)
 	updates := botClient.GetUpdatesChan(60)
@@ -73,4 +77,20 @@ func main() {
 			return
 		}
 	}
+}
+
+func notifyTargetOnStartup(botPort botport.BotPort) {
+	targetUserID := config.GetTargetUserID()
+	if targetUserID == 0 {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err := botPort.SendMessage(ctx, targetUserID, "Бот запущен и готов принимать ответы.", nil)
+	if err != nil {
+		log.Printf("[main] Failed to send startup notification to %d: %v", targetUserID, err)
+		return
+	}
+	log.Printf("[main] Startup notification sent to %d", targetUserID)
 }
