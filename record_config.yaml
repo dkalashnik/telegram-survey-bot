@@ -57,3 +57,23 @@ sections:
         prompt: "Как прошел ваш день? Опишите основные события:"
         type: text_rating
         store_key: day_feedback
+        # Optional: customize rating range (default: 1-10)
+        # rating_min: 1
+        # rating_max: 10
+        # Optional: customize button labels
+        # next_button_label: "➡️ Следующий"
+        # finish_button_label: "✅ Завершить"
+
+  service_quality:
+    title: "🌟 Оценка качества обслуживания"
+    questions:
+      - id: service_rating
+        prompt: "Оцените качество обслуживания и опишите свои впечатления:"
+        type: text_rating
+        store_key: service_quality
+        # Custom 5-star rating scale
+        rating_min: 1
+        rating_max: 5
+        # Custom English labels
+        next_button_label: "🔄 Add Another"
+        finish_button_label: "🏁 Done"

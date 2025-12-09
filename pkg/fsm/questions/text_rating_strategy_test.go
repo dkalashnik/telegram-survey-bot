@@ -314,3 +314,165 @@ func TestTextRatingStrategy_Name(t *testing.T) {
 		t.Fatalf("expected name 'text_rating', got '%s'", strategy.Name())
 	}
 }
+
+func TestTextRatingStrategy_CustomRatingRange(t *testing.T) {
+	strategy := NewTextRatingStrategy()
+	record := state.NewRecord()
+	ctx := AnswerContext{
+		RenderContext: RenderContext{
+			UserState: &state.UserState{CurrentRecord: record},
+			Record:    record,
+			Question: config.QuestionConfig{
+				ID:        "q1",
+				Prompt:    "Rate from 1 to 5",
+				Type:      "text_rating",
+				StoreKey:  "rating",
+				RatingMin: 1,
+				RatingMax: 5,
+			},
+			CallbackPrefix: "answer:",
+		},
+	}
+
+	// Submit text
+	strategy.HandleAnswer(ctx, AnswerInput{
+		Source: InputSourceText,
+		Text:   "Good experience",
+	})
+
+	// Valid rating (3)
+	result, err := strategy.HandleAnswer(ctx, AnswerInput{
+		Source:       InputSourceCallback,
+		CallbackData: "3",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.Repeat {
+		t.Fatalf("expected Repeat=true after valid rating")
+	}
+
+	// Reset for next test
+	record.Data[strategy.getStepKey("q1")] = stepCollectRating
+
+	// Invalid rating (10, out of range)
+	result, err = strategy.HandleAnswer(ctx, AnswerInput{
+		Source:       InputSourceCallback,
+		CallbackData: "10",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.Repeat {
+		t.Fatalf("expected Repeat=true for invalid rating")
+	}
+	if result.Feedback == "" {
+		t.Fatalf("expected feedback message for invalid rating")
+	}
+}
+
+func TestTextRatingStrategy_CustomButtonLabels(t *testing.T) {
+	strategy := NewTextRatingStrategy()
+	record := state.NewRecord()
+	ctx := RenderContext{
+		UserState: &state.UserState{CurrentRecord: record},
+		Record:    record,
+		Question: config.QuestionConfig{
+			ID:                "q1",
+			Type:              "text_rating",
+			StoreKey:          "rating",
+			NextButtonLabel:   "🔄 Add Another",
+			FinishButtonLabel: "🏁 Done",
+		},
+		CallbackPrefix: "answer:",
+	}
+
+	// Set state to next/finish step
+	record.Data[strategy.getStepKey("q1")] = stepNextOrFinish
+	record.Data[strategy.getTempTextKey("q1")] = "Test"
+	record.Data[strategy.getTempRatingKey("q1")] = "8"
+
+	// Render next/finish buttons
+	prompt, err := strategy.Render(ctx)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Check that custom labels are used in the keyboard
+	if prompt.Keyboard == nil {
+		t.Fatalf("expected keyboard to be present")
+	}
+
+	// Verify the keyboard has the custom labels
+	if len(prompt.Keyboard.InlineKeyboard) == 0 {
+		t.Fatalf("expected at least one row in keyboard")
+	}
+	row := prompt.Keyboard.InlineKeyboard[0]
+	if len(row) != 2 {
+		t.Fatalf("expected 2 buttons in row, got %d", len(row))
+	}
+
+	if row[0].Text != "🔄 Add Another" {
+		t.Fatalf("expected first button text '🔄 Add Another', got '%s'", row[0].Text)
+	}
+	if row[1].Text != "🏁 Done" {
+		t.Fatalf("expected second button text '🏁 Done', got '%s'", row[1].Text)
+	}
+}
+
+func TestTextRatingStrategy_ValidateRatingRange(t *testing.T) {
+	strategy := NewTextRatingStrategy()
+
+	// Invalid: min < 1 (negative value)
+	err := strategy.Validate("section1", config.QuestionConfig{
+		ID:        "q1",
+		Type:      "text_rating",
+		RatingMin: -1,
+		RatingMax: 10,
+	})
+	if err == nil {
+		t.Fatalf("expected validation error for rating_min < 1")
+	}
+
+	// Invalid: max > 20
+	err = strategy.Validate("section1", config.QuestionConfig{
+		ID:        "q1",
+		Type:      "text_rating",
+		RatingMin: 1,
+		RatingMax: 25,
+	})
+	if err == nil {
+		t.Fatalf("expected validation error for rating_max > 20")
+	}
+
+	// Invalid: min > max
+	err = strategy.Validate("section1", config.QuestionConfig{
+		ID:        "q1",
+		Type:      "text_rating",
+		RatingMin: 10,
+		RatingMax: 5,
+	})
+	if err == nil {
+		t.Fatalf("expected validation error for rating_min > rating_max")
+	}
+
+	// Valid: custom range
+	err = strategy.Validate("section1", config.QuestionConfig{
+		ID:        "q1",
+		Type:      "text_rating",
+		RatingMin: 1,
+		RatingMax: 5,
+	})
+	if err != nil {
+		t.Fatalf("unexpected validation error: %v", err)
+	}
+
+	// Valid: defaults (0 values will use defaults in runtime)
+	err = strategy.Validate("section1", config.QuestionConfig{
+		ID:   "q1",
+		Type: "text_rating",
+	})
+	if err != nil {
+		t.Fatalf("unexpected validation error for defaults: %v", err)
+	}
+}

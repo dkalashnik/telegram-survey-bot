@@ -29,6 +29,31 @@ func (s *TextRatingStrategy) Validate(sectionID string, question config.Question
 	if len(question.Options) > 0 {
 		return fmt.Errorf("text_rating question should not have options")
 	}
+
+	// Validate rating range if explicitly set
+	minRating := question.RatingMin
+	maxRating := question.RatingMax
+
+	// Only validate if values are explicitly set (non-zero)
+	if minRating != 0 {
+		if minRating < 1 {
+			return fmt.Errorf("rating_min must be at least 1, got %d", minRating)
+		}
+	}
+
+	if maxRating != 0 {
+		if maxRating > 20 {
+			return fmt.Errorf("rating_max cannot exceed 20, got %d", maxRating)
+		}
+	}
+
+	// If both are set, validate the relationship
+	if minRating != 0 && maxRating != 0 {
+		if minRating > maxRating {
+			return fmt.Errorf("rating_min (%d) cannot be greater than rating_max (%d)", minRating, maxRating)
+		}
+	}
+
 	return nil
 }
 
@@ -64,25 +89,29 @@ func (s *TextRatingStrategy) Render(ctx RenderContext) (PromptSpec, error) {
 }
 
 func (s *TextRatingStrategy) renderRatingButtons(ctx RenderContext) (PromptSpec, error) {
-	text := "Оцените от 1 до 10:"
+	minRating, maxRating := s.getRatingRange(ctx.Question)
+	text := fmt.Sprintf("Оцените от %d до %d:", minRating, maxRating)
 
-	// Create 2 rows of 5 buttons each (1-5, 6-10)
-	row1 := make([]tgbotapi.InlineKeyboardButton, 5)
-	row2 := make([]tgbotapi.InlineKeyboardButton, 5)
-
-	for i := 1; i <= 10; i++ {
+	// Create buttons for the rating range
+	buttons := make([]tgbotapi.InlineKeyboardButton, 0, maxRating-minRating+1)
+	for i := minRating; i <= maxRating; i++ {
 		buttonText := fmt.Sprintf("%d", i)
 		callbackData := fmt.Sprintf("%s%s:%d", ctx.CallbackPrefix, ctx.Question.ID, i)
 		button := tgbotapi.NewInlineKeyboardButtonData(buttonText, callbackData)
-
-		if i <= 5 {
-			row1[i-1] = button
-		} else {
-			row2[i-6] = button
-		}
+		buttons = append(buttons, button)
 	}
 
-	keyboard := tgbotapi.NewInlineKeyboardMarkup(row1, row2)
+	// Split buttons into rows of 5
+	var rows [][]tgbotapi.InlineKeyboardButton
+	for i := 0; i < len(buttons); i += 5 {
+		end := i + 5
+		if end > len(buttons) {
+			end = len(buttons)
+		}
+		rows = append(rows, buttons[i:end])
+	}
+
+	keyboard := tgbotapi.NewInlineKeyboardMarkup(rows...)
 
 	return PromptSpec{
 		Text:     text,
@@ -93,13 +122,16 @@ func (s *TextRatingStrategy) renderRatingButtons(ctx RenderContext) (PromptSpec,
 func (s *TextRatingStrategy) renderNextFinishButtons(ctx RenderContext) (PromptSpec, error) {
 	text := "Выберите действие:"
 
+	nextLabel := s.getNextButtonLabel(ctx.Question)
+	finishLabel := s.getFinishButtonLabel(ctx.Question)
+
 	nextCallback := fmt.Sprintf("%s%s:next", ctx.CallbackPrefix, ctx.Question.ID)
 	finishCallback := fmt.Sprintf("%s%s:finish", ctx.CallbackPrefix, ctx.Question.ID)
 
 	keyboard := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("➡️ Следующий", nextCallback),
-			tgbotapi.NewInlineKeyboardButtonData("✅ Завершить", finishCallback),
+			tgbotapi.NewInlineKeyboardButtonData(nextLabel, nextCallback),
+			tgbotapi.NewInlineKeyboardButtonData(finishLabel, finishCallback),
 		),
 	)
 
@@ -175,10 +207,11 @@ func (s *TextRatingStrategy) handleRatingInput(ctx AnswerContext, input AnswerIn
 
 	// Parse rating from callback data
 	rating := input.CallbackData
-	if !s.isValidRating(rating) {
+	if !s.isValidRating(ctx.Question, rating) {
+		minRating, maxRating := s.getRatingRange(ctx.Question)
 		return AnswerResult{
 			Repeat:   true,
-			Feedback: "Пожалуйста, выберите оценку от 1 до 10.",
+			Feedback: fmt.Sprintf("Пожалуйста, выберите оценку от %d до %d.", minRating, maxRating),
 		}, nil
 	}
 
@@ -253,14 +286,45 @@ func (s *TextRatingStrategy) formatEntry(text, rating string) string {
 	return fmt.Sprintf("- %s\n  Рейтинг: %s", text, rating)
 }
 
-func (s *TextRatingStrategy) isValidRating(rating string) bool {
-	validRatings := []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}
-	for _, valid := range validRatings {
-		if rating == valid {
-			return true
-		}
+func (s *TextRatingStrategy) isValidRating(question config.QuestionConfig, rating string) bool {
+	minRating, maxRating := s.getRatingRange(question)
+
+	// Try to parse rating as integer
+	var ratingInt int
+	_, err := fmt.Sscanf(rating, "%d", &ratingInt)
+	if err != nil {
+		return false
 	}
-	return false
+
+	return ratingInt >= minRating && ratingInt <= maxRating
+}
+
+func (s *TextRatingStrategy) getRatingRange(question config.QuestionConfig) (int, int) {
+	minRating := question.RatingMin
+	if minRating == 0 {
+		minRating = 1 // Default minimum
+	}
+
+	maxRating := question.RatingMax
+	if maxRating == 0 {
+		maxRating = 10 // Default maximum
+	}
+
+	return minRating, maxRating
+}
+
+func (s *TextRatingStrategy) getNextButtonLabel(question config.QuestionConfig) string {
+	if question.NextButtonLabel != "" {
+		return question.NextButtonLabel
+	}
+	return "➡️ Следующий" // Default label
+}
+
+func (s *TextRatingStrategy) getFinishButtonLabel(question config.QuestionConfig) string {
+	if question.FinishButtonLabel != "" {
+		return question.FinishButtonLabel
+	}
+	return "✅ Завершить" // Default label
 }
 
 func (s *TextRatingStrategy) getStepKey(questionID string) string {

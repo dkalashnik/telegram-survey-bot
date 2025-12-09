@@ -23,6 +23,12 @@ type QuestionConfig struct {
 	Type     string         `yaml:"type"`
 	StoreKey string         `yaml:"store_key"`
 	Options  []ButtonOption `yaml:"options,omitempty"`
+
+	// Text-rating specific configuration
+	RatingMin         int    `yaml:"rating_min,omitempty"`          // Min rating value (default: 1)
+	RatingMax         int    `yaml:"rating_max,omitempty"`          // Max rating value (default: 10)
+	NextButtonLabel   string `yaml:"next_button_label,omitempty"`   // Label for "next" button (default: "➡️ Следующий")
+	FinishButtonLabel string `yaml:"finish_button_label,omitempty"` // Label for "finish" button (default: "✅ Завершить")
 }
 
 type ButtonOption struct {
