@@ -2,6 +2,16 @@ apiVersion: v1
 entries:
   telegram-survey-bot:
   - apiVersion: v2
+    appVersion: 0.0.1-rc.10
+    created: "2025-12-09T18:03:00.790025329Z"
+    description: Telegram survey bot deployment
+    digest: 3114b5f54d4db56bea128baf411d232d9a546eba5a7c68243e2df980ad7166a1
+    name: telegram-survey-bot
+    type: application
+    urls:
+    - https://github.com/dkalashnik/telegram-survey-bot/releases/download/telegram-survey-bot-0.0.1-rc.10/telegram-survey-bot-0.0.1-rc.10.tgz
+    version: 0.0.1-rc.10
+  - apiVersion: v2
     appVersion: 0.0.1-rc.9
     created: "2025-12-09T16:39:41.012086254Z"
     description: Telegram survey bot deployment
@@ -41,4 +51,4 @@ entries:
     urls:
     - https://github.com/dkalashnik/telegram-survey-bot/releases/download/telegram-survey-bot-0.0.1-rc.6/telegram-survey-bot-0.0.1-rc.6.tgz
     version: 0.0.1-rc.6
-generated: "2025-12-09T16:39:41.012111612Z"
+generated: "2025-12-09T18:03:00.790066116Z"
