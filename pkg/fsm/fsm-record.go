@@ -8,6 +8,7 @@ import (
 	"github.com/dkalashnik/telegram-survey-bot/pkg/ports/botport"
 	"github.com/dkalashnik/telegram-survey-bot/pkg/state"
 	"log"
+	"sort"
 	"strings"
 	"time"
 
@@ -410,6 +411,6 @@ func getSortedSectionIDs(sections map[string]config.SectionConfig) []string {
 	for k := range sections {
 		keys = append(keys, k)
 	}
-
+	sort.Strings(keys)
 	return keys
 }

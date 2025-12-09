@@ -3,12 +3,13 @@ package fsm
 import (
 	"context"
 	"fmt"
+	"log"
+	"strings"
+
 	"github.com/dkalashnik/telegram-survey-bot/pkg/config"
 	"github.com/dkalashnik/telegram-survey-bot/pkg/fsm/questions"
 	"github.com/dkalashnik/telegram-survey-bot/pkg/ports/botport"
 	"github.com/dkalashnik/telegram-survey-bot/pkg/state"
-	"log"
-	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -157,8 +158,6 @@ func handleMessage(ctx context.Context, message *tgbotapi.Message, userState *st
 			log.Printf("[handleMessage] User %d initiated record creation", userState.UserID)
 
 			startOrResumeRecordCreation(ctx, userState, botPort, recordConfig, chatID)
-
-			hideKeyboard(ctx, botPort, chatID, "Начинаем ввод/продолжение записи...")
 
 		case ButtonMainMenuSendSelf:
 			log.Printf("[handleMessage] User %d requested forward to self", userState.UserID)
