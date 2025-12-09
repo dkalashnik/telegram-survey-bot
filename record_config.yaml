@@ -49,3 +49,11 @@ sections:
         prompt: "Любые комментарии или заметки:"
         type: text
         store_key: notes
+
+  daily_feedback:
+    title: "⭐ Ежедневная обратная связь"
+    questions:
+      - id: day_review
+        prompt: "Как прошел ваш день? Опишите основные события:"
+        type: text_rating
+        store_key: day_feedback

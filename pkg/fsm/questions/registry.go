@@ -21,6 +21,7 @@ func RegisterBuiltins() {
 		registerValidator()
 		registerStrategy(NewTextStrategy())
 		registerStrategy(NewButtonsStrategy())
+		registerStrategy(NewTextRatingStrategy())
 	})
 }
 
