@@ -36,7 +36,7 @@ func (s *TextRatingStrategy) Validate(sectionID string, question config.Question
 
 	// Only validate if values are explicitly set (non-zero)
 	if minRating != 0 {
-		if minRating < 1 {
+		if minRating < 0 {
 			return fmt.Errorf("rating_min must be at least 1, got %d", minRating)
 		}
 	}
@@ -301,10 +301,6 @@ func (s *TextRatingStrategy) isValidRating(question config.QuestionConfig, ratin
 
 func (s *TextRatingStrategy) getRatingRange(question config.QuestionConfig) (int, int) {
 	minRating := question.RatingMin
-	if minRating == 0 {
-		minRating = 1 // Default minimum
-	}
-
 	maxRating := question.RatingMax
 	if maxRating == 0 {
 		maxRating = 10 // Default maximum
